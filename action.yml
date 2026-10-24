@@ -1,0 +1,36 @@
+name: Stromy workflow lint
+description: Run pinned offline actionlint and zizmor with the caller's exact finding baseline
+inputs:
+  root:
+    description: Repository root containing native GitHub workflows and actions
+    required: false
+    default: .
+  baseline:
+    description: Caller-owned exact finding baseline
+    required: true
+  report:
+    description: Optional JSON report path
+    required: false
+runs:
+  using: composite
+  steps:
+    - name: Install pinned Python runner
+      uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
+      with:
+        version: '0.11.26'
+        # The action has no lockfile; an unrelated caller lock must not key its tools.
+        enable-cache: false
+    - name: Check native workflows and actions
+      shell: bash
+      env:
+        INPUT_ROOT: ${{ inputs.root }}
+        INPUT_BASELINE: ${{ inputs.baseline }}
+        INPUT_REPORT: ${{ inputs.report }}
+      run: |
+        set -euo pipefail
+        bash "$GITHUB_ACTION_PATH/lint/install-workflow-lint.sh" "$RUNNER_TEMP/workflow-lint-tools"
+        export PATH="$RUNNER_TEMP/workflow-lint-tools:$PATH"
+        report=${INPUT_REPORT:-$RUNNER_TEMP/workflow-lint.json}
+        uv run --no-project --python 3.12 --with pyyaml==6.0.3 \
+          python "$GITHUB_ACTION_PATH/lint/workflow_lint.py" \
+          --root "$INPUT_ROOT" --baseline "$INPUT_BASELINE" --report "$report"
