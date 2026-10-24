@@ -21,9 +21,22 @@ jobs:
         with:
           persist-credentials: false
       - name: Positive native action control
+        id: positive
         uses: ./
         with:
           root: fixtures/pass
           baseline: fixtures/pass/baseline.json
+      - name: Positive exported checker control
+        env:
+          CHECKER_DIR: ${{ steps.positive.outputs.checker_dir }}
+          TOOLS_DIR: ${{ steps.positive.outputs.tools_dir }}
+        run: |
+          test -f "$CHECKER_DIR/workflow_lint.py"
+          test -x "$TOOLS_DIR/actionlint"
+          test -x "$TOOLS_DIR/zizmor"
+          export PATH="$TOOLS_DIR:$PATH"
+          uv run --no-project --python 3.12 --with pyyaml==6.0.3 \
+            python "$CHECKER_DIR/workflow_lint.py" \
+            --root fixtures/pass --baseline fixtures/pass/baseline.json
       - name: Negative native action controls
         run: python3 tests/test_negative.py

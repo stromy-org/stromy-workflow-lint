@@ -18,6 +18,11 @@ The action returns 0 when findings match valid holds, 1 when findings changed,
 and 3 when collection or a required input was unavailable. The baseline is
 never supplied or changed by this repository. The action takes no token input.
 
+After a successful check, `checker_dir` and `tools_dir` expose the same pinned
+checker and offline analyzers for additional rendered roots in that job. A
+template owner can pass these outputs to its render validator; a missing output
+must fail the validator rather than skip a rendered workflow.
+
 `lint/workflow-lint-bundle.json` records the canonical source commit and SHA-256
 of each copied file. The generating source and release process are governed by
 ORG-PLAN-390/C5 in `stromy-org/stromy-org`.

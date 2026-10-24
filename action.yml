@@ -11,6 +11,13 @@ inputs:
   report:
     description: Optional JSON report path
     required: false
+outputs:
+  checker_dir:
+    description: Immutable checker directory for additional render variants in this job
+    value: ${{ steps.check.outputs.checker_dir }}
+  tools_dir:
+    description: Pinned offline analyzer directory for additional render variants
+    value: ${{ steps.check.outputs.tools_dir }}
 runs:
   using: composite
   steps:
@@ -21,6 +28,7 @@ runs:
         # The action has no lockfile; an unrelated caller lock must not key its tools.
         enable-cache: false
     - name: Check native workflows and actions
+      id: check
       shell: bash
       env:
         INPUT_ROOT: ${{ inputs.root }}
@@ -34,3 +42,4 @@ runs:
         uv run --no-project --python 3.12 --with pyyaml==6.0.3 \
           python "$GITHUB_ACTION_PATH/lint/workflow_lint.py" \
           --root "$INPUT_ROOT" --baseline "$INPUT_BASELINE" --report "$report"
+        printf 'checker_dir=%s\ntools_dir=%s\n' "$GITHUB_ACTION_PATH/lint" "$RUNNER_TEMP/workflow-lint-tools" >> "$GITHUB_OUTPUT"
