@@ -1,0 +1,29 @@
+name: Verify public workflow lint action
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: workflow-lint-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - name: Positive native action control
+        uses: ./
+        with:
+          root: fixtures/pass
+          baseline: fixtures/pass/baseline.json
+      - name: Negative native action controls
+        run: python3 tests/test_negative.py

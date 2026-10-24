@@ -1,0 +1,12 @@
+name: Fail fixture
+on: workflow_dispatch
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Unpinned action
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
