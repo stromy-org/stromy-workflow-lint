@@ -23,6 +23,15 @@ checker and offline analyzers for additional rendered roots in that job. A
 template owner can pass these outputs to its render validator; a missing output
 must fail the validator rather than skip a rendered workflow.
 
+`comparator_path` exposes `render_delta.py`. A template owner can compare its
+full-SHA reference render with a channel or canary render using
+`--reference`, `--candidate`, `--track channel|canary|immutable`, `--sha`
+(the full root commit SHA) and, when needed, `--canary-ref ci-vN`. The helper
+permits only first-party root ref substitutions and the three matching Copier
+answer provenance values; every other file, script, permission, secret map and
+third-party action must remain identical. Its JSON always reports live channel
+admission as `NOT-RUN`; the private control-plane policy must check that gate.
+
 `lint/workflow-lint-bundle.json` records the canonical source commit and SHA-256
 of each copied file. The generating source and release process are governed by
 ORG-PLAN-390/C5 in `stromy-org/stromy-org`.
