@@ -18,6 +18,9 @@ outputs:
   tools_dir:
     description: Pinned offline analyzer directory for additional render variants
     value: ${{ steps.check.outputs.tools_dir }}
+  comparator_path:
+    description: Public structural render comparator; channel admission is checked separately
+    value: ${{ steps.check.outputs.comparator_path }}
 runs:
   using: composite
   steps:
@@ -42,4 +45,6 @@ runs:
         uv run --no-project --python 3.12 --with pyyaml==6.0.3 \
           python "$GITHUB_ACTION_PATH/lint/workflow_lint.py" \
           --root "$INPUT_ROOT" --baseline "$INPUT_BASELINE" --report "$report"
-        printf 'checker_dir=%s\ntools_dir=%s\n' "$GITHUB_ACTION_PATH/lint" "$RUNNER_TEMP/workflow-lint-tools" >> "$GITHUB_OUTPUT"
+        printf 'checker_dir=%s\ntools_dir=%s\ncomparator_path=%s\n' \
+          "$GITHUB_ACTION_PATH/lint" "$RUNNER_TEMP/workflow-lint-tools" \
+          "$GITHUB_ACTION_PATH/render_delta.py" >> "$GITHUB_OUTPUT"

@@ -40,3 +40,5 @@ jobs:
             --root fixtures/pass --baseline fixtures/pass/baseline.json
       - name: Negative native action controls
         run: python3 tests/test_negative.py
+      - name: Structural render delta controls
+        run: uv run --no-project --python 3.12 --with pyyaml==6.0.3 python tests/test_delta.py
