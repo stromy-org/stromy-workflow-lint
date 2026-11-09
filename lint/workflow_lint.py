@@ -430,10 +430,7 @@ def main(argv=None):
     parser.add_argument('--report', type=Path)
     parser.add_argument('--channel-policy-root', type=Path,
                         help='trusted live control-plane records for the private ci-stable callable')
-    modes = parser.add_mutually_exclusive_group()
-    modes.add_argument('--emit-template', type=Path, help='emit the immutable three-file public lint bundle')
-    modes.add_argument('--check-template', type=Path, help='compare a bundle with canonical committed source')
-    parser.add_argument('--source-sha', help='full canonical commit for --emit-template')
+    parser.add_argument('--source-sha', help='require the lint root to match this reviewed commit')
     parser.add_argument('--rekey-baseline', action='store_true',
                         help='rewrite holds keyed by a legacy form (step position, ref-bearing fragment), then assess')
     parser.add_argument('--prune-stale', action='store_true',
@@ -442,13 +439,6 @@ def main(argv=None):
     args = parser.parse_args(argv)
     result = {'status': 'NOT-RUN', 'coverage': 'offline-native-workflows-and-actions', 'reason': '', 'findings': []}
     try:
-        if args.emit_template or args.check_template:
-            if args.emit_template:
-                emit_bundle(args.emit_template, args.source_sha)
-            else:
-                check_bundle(args.check_template, canonical=True)
-            print('Portable workflow lint bundle PASS')
-            return 0
         local_bundle = Path(__file__).resolve().parent
         if (local_bundle / BUNDLE_MANIFEST).exists():
             check_bundle(local_bundle)
