@@ -41,18 +41,24 @@ verify_archive() {
     return 1
   fi
 }
+# Bounded retry covers only transient failures (timeouts, 408/429/5xx); a 404 or
+# a checksum mismatch still fails at once. Never add --retry-all-errors.
+fetch_archive() {
+  curl --fail --silent --show-error --location --connect-timeout 10 --max-time 45 --max-filesize 20000000 \
+    --retry 3 --retry-delay "${LINT_FETCH_RETRY_DELAY:-5}" --retry-max-time 120 "$1" --output "$2"
+}
 download_dir=$(mktemp -d)
 trap 'rm -f "$download_dir/actionlint.tar.gz" "$download_dir/shellcheck.tar.xz"; rmdir "$download_dir"' EXIT
 
-curl --fail --silent --show-error --location --connect-timeout 10 --max-time 45 --max-filesize 20000000 \
+fetch_archive \
   "https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_${actionlint_asset}.tar.gz" \
-  --output "$download_dir/actionlint.tar.gz"
+  "$download_dir/actionlint.tar.gz"
 verify_archive "$download_dir/actionlint.tar.gz" "$actionlint_sha"
 tar -xzf "$download_dir/actionlint.tar.gz" -C "$tools_dir" actionlint
 
-curl --fail --silent --show-error --location --connect-timeout 10 --max-time 45 --max-filesize 20000000 \
+fetch_archive \
   "https://github.com/koalaman/shellcheck/releases/download/v0.11.0/shellcheck-v0.11.0.${shellcheck_asset}.tar.xz" \
-  --output "$download_dir/shellcheck.tar.xz"
+  "$download_dir/shellcheck.tar.xz"
 verify_archive "$download_dir/shellcheck.tar.xz" "$shellcheck_sha"
 tar -xJf "$download_dir/shellcheck.tar.xz" -C "$tools_dir" --strip-components=1 shellcheck-v0.11.0/shellcheck
 
