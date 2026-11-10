@@ -14,8 +14,8 @@ SPEC.loader.exec_module(delta)
 SHA = "a" * 40
 
 
-def render(root: Path, track: str) -> None:
-    ref = {"immutable": SHA, "channel": "ci-stable", "canary": "ci-v8"}[track]
+def render(root: Path, track: str, canary: str = "ci-canary") -> None:
+    ref = {"immutable": SHA, "channel": "ci-stable", "canary": canary}[track]
     action_ref = "ci-stable" if track == "channel" else SHA
     files = {
         ".copier-answers.yml":
@@ -63,6 +63,29 @@ class DeltaTest(unittest.TestCase):
                 result = self.compare(track)
                 self.assertEqual((result["status"], result["admission"]), ("PASS", "NOT-RUN"))
                 self.assertGreater(result["allowed_scalars"], 3)
+
+    def test_canary_accepts_ci_canary_by_default_and_ci_v_by_name(self):
+        render(self.after, "canary")
+        self.assertEqual(self.compare("canary")["status"], "PASS")
+        render(self.after, "canary", "ci-v8")
+        result = delta.compare(self.before, self.after, "canary", SHA, "ci-v8")
+        self.assertEqual(result["status"], "PASS")
+
+    def test_canary_render_with_an_immutable_tag_edge_fails(self):
+        render(self.after, "canary", "ci-v8")
+        with self.assertRaises(delta.Drift):
+            self.compare("canary")  # expects ci-canary; ci-v8 edges are a finding
+        render(self.after, "canary")
+        path = self.after / ".github/workflows/ci.yml"
+        path.write_text(path.read_text().replace("ci-python.yml@ci-canary", "ci-python.yml@ci-v8"))
+        with self.assertRaises(delta.Drift):
+            self.compare("canary")
+
+    def test_canary_ref_must_be_ci_canary_or_a_release_tag(self):
+        render(self.after, "canary")
+        for bad in ("main", "ci-stable", "ci-canary2", "ci-v0", "refs/heads/ci-canary"):
+            with self.subTest(ref=bad), self.assertRaises(delta.Unavailable):
+                delta.compare(self.before, self.after, "canary", SHA, bad)
 
     def test_dangerous_mutations_fail(self):
         mutations = {
