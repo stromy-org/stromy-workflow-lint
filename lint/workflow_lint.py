@@ -265,6 +265,16 @@ def admitted_channel_finding(root, item, policy_root):
         raise ValueError('private CI channel policy unavailable') from exc
 
     ref = classify(value)
+    if ref.ref == 'ci-canary':
+        # ORG-PLAN-557 C11: the consumer and the resolved ci-canary SHA come from
+        # the calling run (GITHUB_REPOSITORY; CI_CANARY_SHA = the callable's own
+        # job_workflow_sha), the records from the pinned policy mount.
+        import rollout_lanes
+
+        edge = {'source': ref.repository, 'kind': ref.kind, 'ref': ref.ref, 'action_path': ref.path,
+                'consumer': os.environ.get('GITHUB_REPOSITORY')}
+        return rollout_lanes.canary_channel_edge(edge, root=Path(policy_root),
+                                                 canary_sha=os.environ.get('CI_CANARY_SHA'))
     if not is_channel_call(ref.repository, ref.kind, ref.path, ref.ref):
         return False
     if not channel_admission(policy_root):

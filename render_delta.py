@@ -23,7 +23,7 @@ ROOT_USE = re.compile(
     r"^stromy-org/stromy-org/\.github/(workflows|actions)/([A-Za-z0-9_.\-/]+)@([a-zA-Z0-9_.-]+)$"
 )
 SHA = re.compile(r"[0-9a-f]{40}")
-REF = re.compile(r"ci-v[1-9][0-9]*")
+REF = re.compile(r"ci-canary|ci-v[1-9][0-9]*")
 ANSWERS = {"ci_release_track", "ci_release", "copier_engine_release"}
 MAX_FILES = 2000
 MAX_BYTES = 64_000_000
@@ -191,11 +191,11 @@ def expected_yaml(source: str, name: str, track: str, sha: str, target: str) -> 
 
 
 def compare(reference: Path, candidate: Path, track: str, sha: str,
-            canary_ref: str = "ci-v8") -> dict[str, object]:
+            canary_ref: str = "ci-canary") -> dict[str, object]:
     if track not in {"channel", "canary", "immutable"} or not SHA.fullmatch(sha):
         raise Unavailable("track and immutable source SHA are required")
     if not REF.fullmatch(canary_ref):
-        raise Unavailable("canary ref must be an immutable ci-vN tag name")
+        raise Unavailable("canary ref must be ci-canary or an immutable ci-vN tag name")
     target = {"channel": "ci-stable", "canary": canary_ref, "immutable": sha}[track]
     before, after = tree(reference), tree(candidate)
     if before.keys() != after.keys():
@@ -233,7 +233,7 @@ def main() -> int:
     parser.add_argument("--candidate", type=Path, required=True)
     parser.add_argument("--track", choices=("channel", "canary", "immutable"), required=True)
     parser.add_argument("--sha", required=True)
-    parser.add_argument("--canary-ref", default="ci-v8")
+    parser.add_argument("--canary-ref", default="ci-canary")
     args = parser.parse_args()
     try:
         result = compare(args.reference, args.candidate, args.track, args.sha, args.canary_ref)
